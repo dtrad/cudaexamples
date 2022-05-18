@@ -29,7 +29,15 @@ __global__ void dot( int *a, int *b, int *c ) {
 
 }
 
-
+int bridgefunction(int *dev_a, int *dev_b, int* dev_c){
+  // test if we can pass device pointers to a bridge function
+   // launch add() kernel on GPU, passing parameters
+  int c=0;
+  dot<<< N/THREADS_PER_BLOCK, THREADS_PER_BLOCK >>>( dev_a, dev_b, dev_c );
+  // copy device result back to host copy of c
+  cudaMemcpy( &c, dev_c, sizeof(int), cudaMemcpyDeviceToHost ); 
+  return c;
+}
 
 int main( void ) {
   // test to use a local variable as index in call.
@@ -56,15 +64,19 @@ int main( void ) {
   random_ints(b,N);
   printf("here \n");
   // copy inputs to device
-  cudaMemcpy( &dev_a[0], a, size1, cudaMemcpyHostToDevice );
-  cudaMemcpy( &dev_b[0], b, size1, cudaMemcpyHostToDevice );
-  cudaMemset( &dev_a[n1], 0, size1);
-  cudaMemset( &dev_b[n1], 0, size1);
+  cudaMemcpy( &dev_a[0], a, size, cudaMemcpyHostToDevice );
+  cudaMemcpy( &dev_b[0], b, size, cudaMemcpyHostToDevice );
+  cudaMemset( &dev_a[n1], 0, size1); // testing if can use local integers
+  cudaMemset( &dev_b[n1], 0, size1); // testing if can use local integers
 
-  // launch add() kernel on GPU, passing parameters
-  dot<<< N/THREADS_PER_BLOCK, THREADS_PER_BLOCK >>>( dev_a, dev_b, dev_c );
-  // copy device result back to host copy of c
-  cudaMemcpy( c, dev_c, sizeof(int), cudaMemcpyDeviceToHost );
+  if (0){
+    // launch add() kernel on GPU, passing parameters
+    dot<<< N/THREADS_PER_BLOCK, THREADS_PER_BLOCK >>>( dev_a, dev_b, dev_c );
+    // copy device result back to host copy of c
+    cudaMemcpy( c, dev_c, sizeof(int), cudaMemcpyDeviceToHost );
+  }
+  else *c=bridgefunction(dev_a, dev_b, dev_c);
+
   int sum=0;
   for (int i=0;i<n1;i++) sum+=a[i]*b[i];
 
