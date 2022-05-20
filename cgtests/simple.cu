@@ -142,7 +142,7 @@ int main(void) {
         //axb<<<N/THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(N,dev_a,dev_b,dev_c);
         axb << <grid, block>>>(N, dev_a, dev_b, dev_c);
         cudaMemcpy(d, dev_c, size, cudaMemcpyDeviceToHost);
-        timer2.start();
+        timer2.end();
     }
 
 

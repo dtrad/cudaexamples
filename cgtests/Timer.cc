@@ -21,13 +21,17 @@ void timer::start(){
     gettimeofday(&t1, NULL);
 }
 void timer::end(){
-    gettimeofday(&t2, NULL);
+    gettimeofday(&t2, NULL);    
     totalTime += ((t2.tv_sec - t1.tv_sec)* 1000 + (t2.tv_usec - t1.tv_usec) / 1000);
 }
 void timer::reset(){
     totalTime=0;
 }
 timer::~timer() {
-    cerr << "destructor" << endl;
+    if (0){
+        cerr << "destructor" << endl;
+        cerr << (t1.tv_sec) << "  " << t2.tv_sec << " diff = " << t2.tv_sec - t1.tv_sec << endl;
+        cerr << (t1.tv_usec) << "  " << t2.tv_usec << " diff = " << t2.tv_usec - t1.tv_usec << endl;
+    }
 }
 
