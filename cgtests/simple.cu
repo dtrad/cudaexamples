@@ -55,25 +55,43 @@ __global__ void scalarmultshift(int n, complex* y, complex* x, float eps, int st
     }
 }; //for (i = ny; i < nz; i++) y[i] = eps * x[i - ny];
 
-__global__ void rdotsimple(complex* a, complex* b, float* c){
-    int index = threadIdx.x + blockIdx.x * blockDim.x;
-    if (index < N){
-        float tmpr = a[index].r * b[index].r + a[index].i*b[index].i;
-        // float tempi = a[index].r * b[index].i - a[index].i*b[index].r;
-        atomicAdd(c,tmpr);
+__global__ void apbxs(int n, complex* a, complex* b, float scalar, complex* c) {
+
+    for (int i = THREAD_ID; i < n; i += THREAD_COUNT) {
+        c[i].r = a[i].r + (scalar) * b[i].r;
+        c[i].i = a[i].i + (scalar) * b[i].i;
     }
-    
-    
+    //if ((threadIdx.x==0)&&(blockIdx.x==0)) printf("scalar=%f",scalar);
+}
+
+__global__ void aepbxs(int n, complex* a, complex* b, float scalar) {
+
+    for (int i = THREAD_ID; i < n; i += THREAD_COUNT) {
+        a[i].r += (scalar * b[i].r);
+        a[i].i += (scalar * b[i].i);
+    }
+    //if ((threadIdx.x==0)&&(blockIdx.x==0)) printf("scalar=%f",scalar);
+}
+
+__global__ void rdotsimple(complex* a, complex* b, float* c) {
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    if (index < N) {
+        float tmpr = a[index].r * b[index].r + a[index].i * b[index].i;
+        // float tempi = a[index].r * b[index].i - a[index].i*b[index].r;
+        atomicAdd(c, tmpr);
+    }
+
+
 }
 
 __global__ void dot(complex *a, complex *b, float *c) {
     __shared__ float tempr[NUM_THREADS];
-//    __shared__ float tempi[NUM_THREADS];
+    //    __shared__ float tempi[NUM_THREADS];
     int index = threadIdx.x + blockIdx.x * blockDim.x;
-    if (index<N)
-        tempr[threadIdx.x] = a[index].r * b[index].r + a[index].i*b[index].i;
+    if (index < N)
+        tempr[threadIdx.x] = a[index].r * b[index].r + a[index].i * b[index].i;
     else tempr[threadIdx.x] = 0;
-//    tempi[threadIdx.x] = a[index].r * b[index].i - a[index].i*b[index].r;
+    //    tempi[threadIdx.x] = a[index].r * b[index].i - a[index].i*b[index].r;
 
     __syncthreads();
 
@@ -81,7 +99,7 @@ __global__ void dot(complex *a, complex *b, float *c) {
         float sumr = 0;
         for (int i = 0; i < NUM_THREADS; i++) sumr += tempr[i];
         atomicAdd(c, sumr);
-        
+
     }
     __syncthreads();
     //if ((blockIdx.x==0)&&(threadIdx.x==0)) printf("block id %d c%f\n",blockIdx.x,*c);
@@ -123,12 +141,11 @@ __global__ void vecdot_reduce(complex* partial, float* result) {
 
     __shared__ float tmpr[NUM_BLOCKS];
     __shared__ float tmpi[NUM_BLOCKS];
-    
+
     if (threadIdx.x < NUM_BLOCKS) {
         tmpr[threadIdx.x] = partial[threadIdx.x].r;
         tmpi[threadIdx.x] = partial[threadIdx.x].i;
-    }
-    else {
+    } else {
         tmpr[threadIdx.x] = 0;
         tmpi[threadIdx.x] = 0;
     }
@@ -155,7 +172,7 @@ void vecdot(int n, complex* vec1, complex * vec2, float* result, complex* tmpnb)
 
     //dim3 BlockDim(NUM_THREADS);
     //dim3 GridDim(NUM_BLOCKS);
-    printf("numblocks = %d\n",NUM_BLOCKS);
+    printf("numblocks = %d\n", NUM_BLOCKS);
     vecdot_partial << < NUM_BLOCKS, NUM_THREADS>>>(n, vec1, vec2, tmpnb);
     vecdot_reduce << <1, NUM_BLOCKS>>>(tmpnb, result);
     //printf("result %f\n",*result);
@@ -166,8 +183,6 @@ void scalarassign(float* dest, float* src) {
     cudaMemcpy(dest, src, sizeof (float), cudaMemcpyDeviceToDevice);
 }
 /////////////////////////////////////////////////////////////////////////////
-
-
 
 void random_complex(complex*a, int n) {
     srand(time(NULL));
@@ -188,12 +203,12 @@ float compare(complex* a, complex* b, int n) {
 }
 
 void dotfunctionsimple(complex *dev_a, complex *dev_b, float* dev_c) {
-    rdotsimple<<< NUM_BLOCKS, NUM_THREADS >>>( dev_a, dev_b, dev_c );
+    rdotsimple << < NUM_BLOCKS, NUM_THREADS >>>(dev_a, dev_b, dev_c);
     return;
-} 
+}
 
 void dotfunction(complex *dev_a, complex *dev_b, float* dev_c) {
-    dot<<< NUM_BLOCKS, NUM_THREADS >>>( dev_a, dev_b, dev_c );
+    dot << < NUM_BLOCKS, NUM_THREADS >>>(dev_a, dev_b, dev_c);
     //printf("dev_c=%f\n",*dev_c);
     // copy device result back to host copy of c
     return;
@@ -220,20 +235,20 @@ int main(void) {
     c = (complex*) malloc(size);
     d = (complex*) malloc(size);
 
-    
+
     dim3 grid = NUM_BLOCKS;
     dim3 block = NUM_THREADS;
-    
+
     // variables to group in cg class later
-    complex* d_tmpnb =0;
-    cudaMalloc((void**) &d_tmpnb, NUM_BLOCKS*CSIZE);
-    cudaMemset(d_tmpnb,0,NUM_BLOCKS*CSIZE);
+    complex* d_tmpnb = 0;
+    cudaMalloc((void**) &d_tmpnb, NUM_BLOCKS * CSIZE);
+    cudaMemset(d_tmpnb, 0, NUM_BLOCKS * CSIZE);
 
     random_complex(a, N);
     random_complex(b, N);
     if (0)
-        for (int i=0;i<100;i++)
-            printf("a[i]=%f,%f \n",a[i].r,a[i].i);
+        for (int i = 0; i < 100; i++)
+            printf("a[i]=%f,%f \n", a[i].r, a[i].i);
 
     // copy inputs to device
     cudaMemcpy(&dev_a[0], a, size, cudaMemcpyHostToDevice);
@@ -245,8 +260,8 @@ int main(void) {
     timer timer2 = timer();
     timer timer3 = timer();
     timer timer4 = timer();
-    
-    float error=0;
+
+    float error = 0;
     if (0) {
         for (int i = 0; i < N; i++) c[i] = a[i] * b[i];
         //axb<<<N/THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(N,dev_a,dev_b,dev_c);
@@ -263,58 +278,82 @@ int main(void) {
         timer2.end();
         error = compare(c, d, N);
         printf("error %f\n", error);
-    }
-    else if (1){ // complex dot product test
+    } else if (0) {
+        float scalar = 10;
         timer1.start();
-        complex csum;csum.r=csum.i=0;
-        for (int i=0; i<N;i++) csum.r+=(a[i].r*a[i].r+a[i].i*a[i].i);  
+        for (int i = 0; i < N; i++) c[i] = a[i] + scalar * b[i];
         timer1.end();
-        
+        timer3.start();
+        apbxs << <grid, block>>>(N, dev_a, dev_b, scalar, dev_c);
+        cudaMemcpy(d, dev_c, size, cudaMemcpyDeviceToHost);
+        timer3.end();
+        error = compare(c, d, N);
+        printf("difference apbxs %f\n", error); 
+      } else if (1) {
+        float scalar = 9;
+        timer1.start();
+        for (int i = 0; i < N; i++) a[i] += scalar * b[i];
+        timer1.end();
+        timer3.start();
+        aepbxs << <grid, block>>>(N, dev_a, dev_b, scalar);
+        cudaMemcpy(d, dev_a, size, cudaMemcpyDeviceToHost);
+        timer3.end();
+        error = compare(a, d, N);
+        printf("difference aepbxs %f\n", error);
+
+    } else if (1) { // complex dot product test
+        timer1.start();
+        complex csum;
+        csum.r = csum.i = 0;
+        for (int i = 0; i < N; i++) csum.r += (a[i].r * a[i].r + a[i].i * a[i].i);
+        timer1.end();
+
         timer2.start();
-        complex csum2;csum2.r=csum2.i=0;
-        for (int i=0; i<N;i++) csum2+=(a[i]*(MYCOMPLEX::conjg(a[i])));  
+        complex csum2;
+        csum2.r = csum2.i = 0;
+        for (int i = 0; i < N; i++) csum2 += (a[i]*(MYCOMPLEX::conjg(a[i])));
         timer2.end();
-        
-        printf("csum.r=%f csum.i=%f\n",csum.r,csum.i);
-        printf("csum2.r=%f csum2.i=%f\n",csum2.r,csum2.i);
-        
+
+        printf("csum.r=%f csum.i=%f\n", csum.r, csum.i);
+        printf("csum2.r=%f csum2.i=%f\n", csum2.r, csum2.i);
+
         float* d_gpudota, *d_gpudotb;
         float gpudota, gpudotb;
-        cudaMalloc(&d_gpudota,FSIZE);
-        cudaMalloc(&d_gpudotb,FSIZE);
-        cudaMemset(d_gpudota,0,FSIZE);
-        cudaMemset(d_gpudotb,0,FSIZE);
+        cudaMalloc(&d_gpudota, FSIZE);
+        cudaMalloc(&d_gpudotb, FSIZE);
+        cudaMemset(d_gpudota, 0, FSIZE);
+        cudaMemset(d_gpudotb, 0, FSIZE);
         timer3.start();
-        vecdot(N,dev_a,dev_a,d_gpudota,d_tmpnb);
+        vecdot(N, dev_a, dev_a, d_gpudota, d_tmpnb);
         timer3.end();
-        timer4.start();        
+        timer4.start();
         //dotfunctionsimple(dev_a,dev_a,d_gpudotb);
-        dotfunction(dev_a,dev_a,d_gpudotb);
+        dotfunction(dev_a, dev_a, d_gpudotb);
         //usleep(1150400); // microsec to check timer info.
         timer4.end();
-        cudaMemcpy(&gpudota,d_gpudota,FSIZE,cudaMemcpyDeviceToHost);
-        cudaMemcpy(&gpudotb,d_gpudotb,FSIZE,cudaMemcpyDeviceToHost);
+        cudaMemcpy(&gpudota, d_gpudota, FSIZE, cudaMemcpyDeviceToHost);
+        cudaMemcpy(&gpudotb, d_gpudotb, FSIZE, cudaMemcpyDeviceToHost);
         printf("gpudota %f\n", gpudota);
         printf("gpudotb %f\n", gpudotb);
-        
-        
-        error= csum.r - gpudota;        
-        printf("real error a %f\n", error);        
-        error= csum.r - gpudotb;        
-        printf("real error b %f\n", error);        
-        
+
+
+        error = csum.r - gpudota;
+        printf("real error a %f\n", error);
+        error = csum.r - gpudotb;
+        printf("real error b %f\n", error);
+
         cudaFree(d_gpudota);
         cudaFree(d_gpudotb);
-        
+
     }
 
 
     // test function;
-    if (!error) printf("success ");    
-    else        printf("error "); 
-    printf("errors,  CPU1=%d - CPU2=%d GPU1=%d GPU2=%d\n", 
+    if (!error) printf("success ");
+    else printf("error ");
+    printf(" CPU1=%d - CPU2=%d GPU1=%d GPU2=%d\n",
             timer1.totalTime, timer2.totalTime, timer3.totalTime, timer4.totalTime);
-    
+
     free(a);
     free(b);
     free(c);
@@ -322,6 +361,6 @@ int main(void) {
     cudaFree(dev_b);
     cudaFree(dev_c);
     cudaFree(d_tmpnb);
-    
+
     return 0;
 }
