@@ -188,7 +188,7 @@ float compare(complex* a, complex* b, int n) {
 }
 
 void dotfunctionsimple(complex *dev_a, complex *dev_b, float* dev_c) {
-    dot<<< NUM_BLOCKS, NUM_THREADS >>>( dev_a, dev_b, dev_c );
+    rdotsimple<<< NUM_BLOCKS, NUM_THREADS >>>( dev_a, dev_b, dev_c );
     return;
 } 
 
