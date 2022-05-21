@@ -8,7 +8,7 @@
 
 using namespace MYCOMPLEX;
 
-#define N (2048*128)
+#define N (2048*128) // Method GPU1 needs power of 2, need to fix that.
 //#define THREADS_PER_BLOCK 512
 #define NUM_THREADS 512
 //#define NUM_BLOCKS ((N-1)/NUM_THREADS)+1
@@ -55,15 +55,24 @@ __global__ void scalarmultshift(int n, complex* y, complex* x, float eps, int st
     }
 }; //for (i = ny; i < nz; i++) y[i] = eps * x[i - ny];
 
+__global__ void rdotsimple(complex* a, complex* b, float* c){
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    if (index < N){
+        float tmpr = a[index].r * b[index].r + a[index].i*b[index].i;
+        // float tempi = a[index].r * b[index].i - a[index].i*b[index].r;
+        atomicAdd(c,tmpr);
+    }
+    
+    
+}
+
 __global__ void dot(complex *a, complex *b, float *c) {
     __shared__ float tempr[NUM_THREADS];
 //    __shared__ float tempi[NUM_THREADS];
     int index = threadIdx.x + blockIdx.x * blockDim.x;
-    tempr[threadIdx.x] = a[index].r * b[index].r + a[index].i*b[index].i;
-    
-    //if (index<N)
-    //    tempr[threadIdx.x] = a[index].r * b[index].r + a[index].i*b[index].i;
-    //else tempr[threadIdx.x] = 0;
+    if (index<N)
+        tempr[threadIdx.x] = a[index].r * b[index].r + a[index].i*b[index].i;
+    else tempr[threadIdx.x] = 0;
 //    tempi[threadIdx.x] = a[index].r * b[index].i - a[index].i*b[index].r;
 
     __syncthreads();
@@ -178,6 +187,11 @@ float compare(complex* a, complex* b, int n) {
 
 }
 
+void dotfunctionsimple(complex *dev_a, complex *dev_b, float* dev_c) {
+    dot<<< NUM_BLOCKS, NUM_THREADS >>>( dev_a, dev_b, dev_c );
+    return;
+} 
+
 void dotfunction(complex *dev_a, complex *dev_b, float* dev_c) {
     dot<<< NUM_BLOCKS, NUM_THREADS >>>( dev_a, dev_b, dev_c );
     //printf("dev_c=%f\n",*dev_c);
@@ -229,6 +243,9 @@ int main(void) {
     //cudaMemset( &dev_b[0], 0, size); // testing if can use local integers
     timer timer1 = timer();
     timer timer2 = timer();
+    timer timer3 = timer();
+    timer timer4 = timer();
+    
     float error=0;
     if (0) {
         for (int i = 0; i < N; i++) c[i] = a[i] * b[i];
@@ -250,27 +267,37 @@ int main(void) {
     else if (1){ // complex dot product test
         timer1.start();
         complex csum;csum.r=csum.i=0;
-        complex csum2;csum2.r=csum2.i=0;
         for (int i=0; i<N;i++) csum.r+=(a[i].r*a[i].r+a[i].i*a[i].i);  
-        for (int i=0; i<N;i++) csum2+=(a[i]*(MYCOMPLEX::conjg(a[i])));  
         timer1.end();
+        
+        timer2.start();
+        complex csum2;csum2.r=csum2.i=0;
+        for (int i=0; i<N;i++) csum2+=(a[i]*(MYCOMPLEX::conjg(a[i])));  
+        timer2.end();
+        
         printf("csum.r=%f csum.i=%f\n",csum.r,csum.i);
         printf("csum2.r=%f csum2.i=%f\n",csum2.r,csum2.i);
-        timer2.start();
+        
         float* d_gpudota, *d_gpudotb;
         float gpudota, gpudotb;
         cudaMalloc(&d_gpudota,FSIZE);
         cudaMalloc(&d_gpudotb,FSIZE);
         cudaMemset(d_gpudota,0,FSIZE);
         cudaMemset(d_gpudotb,0,FSIZE);
+        timer3.start();
         vecdot(N,dev_a,dev_a,d_gpudota,d_tmpnb);
+        timer3.end();
+        timer4.start();        
+        //dotfunctionsimple(dev_a,dev_a,d_gpudotb);
         dotfunction(dev_a,dev_a,d_gpudotb);
+        //usleep(1150400); // microsec to check timer info.
+        timer4.end();
         cudaMemcpy(&gpudota,d_gpudota,FSIZE,cudaMemcpyDeviceToHost);
         cudaMemcpy(&gpudotb,d_gpudotb,FSIZE,cudaMemcpyDeviceToHost);
         printf("gpudota %f\n", gpudota);
         printf("gpudotb %f\n", gpudotb);
-        //usleep(2000); // microsec to check timer info.
-        timer2.end();
+        
+        
         error= csum.r - gpudota;        
         printf("real error a %f\n", error);        
         error= csum.r - gpudotb;        
@@ -283,8 +310,10 @@ int main(void) {
 
 
     // test function;
-    if (!error) printf("success CPU %d - GPU %d\n", timer1.totalTime, timer2.totalTime);
-    if (error) printf("errors,  CPU %d - GPU %d\n", timer1.totalTime, timer2.totalTime);
+    if (!error) printf("success ");    
+    else        printf("error "); 
+    printf("errors,  CPU1=%d - CPU2=%d GPU1=%d GPU2=%d\n", 
+            timer1.totalTime, timer2.totalTime, timer3.totalTime, timer4.totalTime);
     
     free(a);
     free(b);

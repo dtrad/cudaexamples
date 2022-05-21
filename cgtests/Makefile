@@ -10,7 +10,7 @@ $(NAME): $(OBJECTS)
 	${NVCC} $(OBJECTS) -o $@ 
 
 %.o: %.cu
-	${NVCC} -O2 -g -G -c $<
+	${NVCC} -O2 -g -c $<
 %.o: %.cc
 	g++ -O2 -g -c $<
 clean:

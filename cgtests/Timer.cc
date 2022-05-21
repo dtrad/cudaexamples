@@ -22,7 +22,8 @@ void timer::start(){
 }
 void timer::end(){
     gettimeofday(&t2, NULL);    
-    totalTime += ((t2.tv_sec - t1.tv_sec)* 1000 + (t2.tv_usec - t1.tv_usec) / 1000);
+    //totalTime += ((t2.tv_sec - t1.tv_sec)* 1000 + (t2.tv_usec - t1.tv_usec) / 1000); // msec
+    totalTime += ((t2.tv_sec - t1.tv_sec)* 1000000 + (t2.tv_usec - t1.tv_usec));  // microsec
 }
 void timer::reset(){
     totalTime=0;
