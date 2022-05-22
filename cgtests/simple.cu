@@ -169,10 +169,11 @@ void vecdot(int n, complex* vec1, complex * vec2, float* result, complex* tmpnb)
     // if vec1 and vec2 are the same vector, we only get real.
     // need to create a new function to account for that. 
     // for now, just return real part.
-
-    //dim3 BlockDim(NUM_THREADS);
-    //dim3 GridDim(NUM_BLOCKS);
+    
+    // this is classical reduction that needs two kernel calls because 
+    // that is the only way to synchronize blocks (threads can be synchronize in the same call)
     printf("numblocks = %d\n", NUM_BLOCKS);
+    cudaMemset(tmpnb,0,NUM_BLOCKS*CSIZE);
     vecdot_partial << < NUM_BLOCKS, NUM_THREADS>>>(n, vec1, vec2, tmpnb);
     vecdot_reduce << <1, NUM_BLOCKS>>>(tmpnb, result);
     //printf("result %f\n",*result);
@@ -301,7 +302,7 @@ int main(void) {
         error = compare(a, d, N);
         printf("difference aepbxs %f\n", error);
 
-    } else if (0) { // complex dot product test
+    } else if (1) { // complex dot product test
         timer1.start();
         complex csum;
         csum.r = csum.i = 0;
