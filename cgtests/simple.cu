@@ -346,6 +346,7 @@ int main(void) {
         cudaFree(d_gpudotb);
 
     } else if (1) { // managed memory test,
+        // first do in cpu
         timer1.start();
         complex csum;
         csum.r = csum.i = 0;
@@ -353,15 +354,30 @@ int main(void) {
         float alpha=csum.r;
         for (int i=0; i< N; i++) c[i]=a[i]+alpha*b[i];
         timer1.end();
+        // gpu test 1, use managed memory with synchronize
         timer3.start();
         float* alphaman=0;
         cudaMallocManaged(&alphaman,FSIZE);
         dotfunction(dev_a, dev_a, alphaman);
         cudaDeviceSynchronize(); // important, need to synchronize with the host before accessing.
         timer3.end();
-        printf("alpha=%f alphaman=%f \n",alpha,*alphaman);
-        float test=(*alphaman)/alpha;
+
+        float test=(*alphaman)/alpha; // as an alternative, can do all operations in gpu wiht 1 thread.
         std::cerr << test << std::endl;
+        // gpu test 2
+        float* d_alpha = 0;
+        float alphadev=0;
+        timer4.start();
+        cudaMalloc(&d_alpha,FSIZE);
+        dotfunction(dev_a, dev_a, d_alpha);
+        cudaMemcpy(&alphadev,d_alpha,FSIZE,cudaMemcpyDeviceToHost); // instead of synchronize, we copy to host.
+        timer4.end();
+        printf("alpha=%f alphaman=%f alphadev=%f\n",alpha,*alphaman,alphadev);
+        cudaFree(alphaman);
+        cudaFree(d_alpha);
+        
+        
+        
         
     }
 
