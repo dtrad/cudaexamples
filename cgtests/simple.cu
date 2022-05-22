@@ -5,7 +5,7 @@
 #include <valarray>
 #include "Timer.hh"
 #include <unistd.h>
-
+#include <iostream>
 using namespace MYCOMPLEX;
 
 #define N (2048*128) // Method GPU1 needs power of 2, need to fix that.
@@ -101,7 +101,7 @@ __global__ void dot(complex *a, complex *b, float *c) {
         atomicAdd(c, sumr);
 
     }
-    __syncthreads();
+    //__syncthreads();
     //if ((blockIdx.x==0)&&(threadIdx.x==0)) printf("block id %d c%f\n",blockIdx.x,*c);
 }
 /////////////////////////////////////////////////////////////////////////////////
@@ -288,8 +288,8 @@ int main(void) {
         cudaMemcpy(d, dev_c, size, cudaMemcpyDeviceToHost);
         timer3.end();
         error = compare(c, d, N);
-        printf("difference apbxs %f\n", error); 
-      } else if (1) {
+        printf("difference apbxs %f\n", error);
+    } else if (0) {
         float scalar = 9;
         timer1.start();
         for (int i = 0; i < N; i++) a[i] += scalar * b[i];
@@ -301,7 +301,7 @@ int main(void) {
         error = compare(a, d, N);
         printf("difference aepbxs %f\n", error);
 
-    } else if (1) { // complex dot product test
+    } else if (0) { // complex dot product test
         timer1.start();
         complex csum;
         csum.r = csum.i = 0;
@@ -345,6 +345,24 @@ int main(void) {
         cudaFree(d_gpudota);
         cudaFree(d_gpudotb);
 
+    } else if (1) { // managed memory test,
+        timer1.start();
+        complex csum;
+        csum.r = csum.i = 0;
+        for (int i = 0; i < N; i++) csum.r += (a[i].r * a[i].r + a[i].i * a[i].i);        
+        float alpha=csum.r;
+        for (int i=0; i< N; i++) c[i]=a[i]+alpha*b[i];
+        timer1.end();
+        timer3.start();
+        float* alphaman=0;
+        cudaMallocManaged(&alphaman,FSIZE);
+        dotfunction(dev_a, dev_a, alphaman);
+        cudaDeviceSynchronize(); // important, need to synchronize with the host before accessing.
+        timer3.end();
+        printf("alpha=%f alphaman=%f \n",alpha,*alphaman);
+        float test=(*alphaman)/alpha;
+        std::cerr << test << std::endl;
+        
     }
 
 
