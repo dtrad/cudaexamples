@@ -9,7 +9,7 @@ NVCC_FLAGS=-m64 -lineinfo --default-stream per-thread -Xcompiler -fopenmp # --re
 LIBRARIES= -lgomp
 
 # Gencode argumentes
-SMS = 30 35 37 50 52 60 61 70
+SMS = 75 80
 $(foreach sm, ${SMS}, $(eval GENCODE_FLAGS += -gencode arch=compute_$(sm),code=sm_$(sm)))
 
 all: ${TARGET}
