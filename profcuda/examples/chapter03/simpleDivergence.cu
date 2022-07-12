@@ -112,7 +112,7 @@ int main(int argc, char **argv)
     printf("%s using Device %d: %s\n", argv[0], dev, deviceProp.name);
 
     // set up data size
-    int size = 64;
+    int size = 2 << 5;
     int blocksize = 64;
 
     if(argc > 1) blocksize = atoi(argv[1]);
@@ -138,8 +138,7 @@ int main(int argc, char **argv)
     warmingup<<<grid, block>>>(d_C);
     CHECK(cudaDeviceSynchronize());
     iElaps = seconds() - iStart;
-    printf("warmup      <<< %4d %4d >>> elapsed %d sec \n", grid.x, block.x,
-           iElaps );
+    printf("warmup      <<< %4d %4d >>> elapsed %f sec \n", grid.x, block.x, iElaps );
     CHECK(cudaGetLastError());
 
     // run kernel 1
@@ -147,8 +146,7 @@ int main(int argc, char **argv)
     mathKernel1<<<grid, block>>>(d_C);
     CHECK(cudaDeviceSynchronize());
     iElaps = seconds() - iStart;
-    printf("mathKernel1 <<< %4d %4d >>> elapsed %d sec \n", grid.x, block.x,
-           iElaps );
+    printf("mathKernel1 <<< %4d %4d >>> elapsed %f sec \n", grid.x, block.x, iElaps );
     CHECK(cudaGetLastError());
 
     // run kernel 3
@@ -156,8 +154,7 @@ int main(int argc, char **argv)
     mathKernel2<<<grid, block>>>(d_C);
     CHECK(cudaDeviceSynchronize());
     iElaps = seconds() - iStart;
-    printf("mathKernel2 <<< %4d %4d >>> elapsed %d sec \n", grid.x, block.x,
-           iElaps );
+    printf("mathKernel2 <<< %4d %4d >>> elapsed %f sec \n", grid.x, block.x, iElaps );
     CHECK(cudaGetLastError());
 
     // run kernel 3
@@ -165,8 +162,7 @@ int main(int argc, char **argv)
     mathKernel3<<<grid, block>>>(d_C);
     CHECK(cudaDeviceSynchronize());
     iElaps = seconds() - iStart;
-    printf("mathKernel3 <<< %4d %4d >>> elapsed %d sec \n", grid.x, block.x,
-           iElaps);
+    printf("mathKernel3 <<< %4d %4d >>> elapsed %f sec \n", grid.x, block.x, iElaps);
     CHECK(cudaGetLastError());
 
     // run kernel 4
@@ -174,7 +170,7 @@ int main(int argc, char **argv)
     mathKernel4<<<grid, block>>>(d_C);
     CHECK(cudaDeviceSynchronize());
     iElaps = seconds() - iStart;
-    printf("mathKernel4 <<< %4d %4d >>> elapsed %d sec \n", grid.x, block.x,
+    printf("mathKernel4 <<< %4d %4d >>> elapsed %f sec \n", grid.x, block.x,
            iElaps);
     CHECK(cudaGetLastError());
 
