@@ -1,14 +1,15 @@
 CUDA_PATH=/usr/local/cuda
+CUDA_SAMPLES=/home/dtrad/cuda-10.2
 HOST_COMPILER ?= g++
 NVCC=${CUDA_PATH}/bin/nvcc -ccbin ${HOST_COMPILER}
 MPICC ?= mpicc
 TARGET=simpleMPI
 
-INCLUDES = -I${CUDA_PATH}/samples/common/inc -I/usr/local/include/
+INCLUDES = -I${CUDA_SAMPLES}/samples/common/inc -I/usr/local/include/
 NVCC_FLAGS=-m64 -Xcompiler -fopenmp -rdc=true -lcudadevrt -lmpi # --resource-usage
 
 # Gencode argumentes
-SMS = 35 37 50 52 60 61 70
+SMS = 70 75 
 $(foreach sm, ${SMS}, $(eval GENCODE_FLAGS += -gencode arch=compute_$(sm),code=sm_$(sm)))
 
 LIBRARIES += -lgomp
