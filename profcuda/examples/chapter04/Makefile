@@ -6,8 +6,8 @@ C_APPS=
 all: ${C_APPS} ${CU_APPS}
 
 %: %.cu
-	nvcc -O2 -arch=sm_75 -o $@ $<
+	nvcc -O2 -G -arch=sm_75 -o $@ $<
 %: %.c
-	gcc -O2 -std=c99 -o $@ $<
+	gcc -O2 -g -std=c99 -o $@ $<
 clean:
 	rm -f ${CU_APPS} ${C_APPS}

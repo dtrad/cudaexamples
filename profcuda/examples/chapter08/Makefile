@@ -1,6 +1,8 @@
-CU_APPS=cublas cuda-openacc cufft-multi cufft cusparse rand-kernel \
+CU_APPS=cublas cuda-openacc cufft-multi cufft rand-kernel \
         replace-rand-streams replace-rand
 C_APPS=simple-data simple-kernels simple-parallel
+
+# removed from CU_APPS: cusparse
 
 all: ${C_APPS} ${CU_APPS}
 
