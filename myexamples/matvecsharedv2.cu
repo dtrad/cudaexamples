@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cuda_runtime.h>
-#define BLOCK_SIZE 8
+#define BLOCK_SIZE 32
 using namespace std;
 void multiply(float* A, const float* x, float* y, int M, int N){
     for (int i = 0; i < M; ++i) {
@@ -11,6 +11,16 @@ void multiply(float* A, const float* x, float* y, int M, int N){
     return;
 }
 
+__global__ void matvec_kernelGlobal(float* A, float* x, float* y, int M, int N) {
+    int row = blockIdx.x*blockDim.x + threadIdx.x;
+    if (row < M) {
+        float sum = 0;
+        for (int i = 0; i < N; i++) {
+            sum += A[row*N + i] * x[i];
+        }
+        y[row] = sum;
+    }
+}
  
 __global__ void matvec_kernel(float *A, float *x, float *y, int M, int N) {
     // Determine the thread's row and column within the block
@@ -46,9 +56,14 @@ __global__ void matvec_kernel(float *A, float *x, float *y, int M, int N) {
 }
 
 int main() {
+    // Create events for timing
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
     // Allocate host and device arrays
-    const int m = 150;
-    int n = 65;
+    const int m = 450;
+    int n = 467;
     int nbsize=BLOCK_SIZE;
     int norig=n;
     while (n%nbsize) n++;
@@ -64,12 +79,20 @@ int main() {
     for (int i=0;i<norig;i++) h_x[i]=i;
     for (int i=0;i<m;i++) h_y[i]=0;
     for (int i=0;i<m;i++) h_y2[i]=0;
+
+    cudaEventRecord(start, 0);
     multiply(h_A, h_x, h_y, m, n);
+    cudaEventRecord(stop, 0);
+    float elapsed_time=0;
+    cudaEventElapsedTime(&elapsed_time, start, stop);
+    printf("Elapsed time CPU: %f ms\n", elapsed_time);
 
     // Print the result
-    std::cout << "CPU Result: ";
-    for (int i = 0; i < m; i++) std::cout << h_y[i] << " ";
-    std::cout << std::endl;
+    if (0){
+        std::cout << "CPU Result: ";
+        for (int i = 0; i < m; i++) std::cout << h_y[i] << " ";
+        std::cout << std::endl;
+    }
 
     float* d_A=0;
     float* d_x=0;
@@ -78,27 +101,39 @@ int main() {
     cudaMalloc((void**)&d_x, n * sizeof(float));
     cudaMalloc((void**)&d_y, m * sizeof(float));
     
-
+    cudaEventRecord(start, 0);
     // Copy data from host to device
     cudaMemcpy(d_A, h_A, m * n * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_x, h_x, n * sizeof(float), cudaMemcpyHostToDevice);
-  
+    bool global=false;
+    if (global){
+        dim3 blockSize(BLOCK_SIZE, 1, 1);
+        dim3 gridSize((m + blockSize.x - 1) / blockSize.x, 1, 1);
+        matvec_kernelGlobal<<< gridSize, blockSize >>>(d_A, d_x, d_y, m, n);      
+    }
+    else{
+        dim3 blockSize(BLOCK_SIZE, BLOCK_SIZE);
+        dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
+        matvec_kernel<<< gridSize, blockSize >>>(d_A, d_x, d_y, m, n);
+    }
     
-    // Launch the kernel
-    dim3 blockSize(BLOCK_SIZE, BLOCK_SIZE);
-    dim3 gridSize((n + blockSize.x - 1) / blockSize.x, (m + blockSize.y - 1) / blockSize.y);
-    
-    matvec_kernel<<< gridSize, blockSize >>>(d_A, d_x, d_y, m, n);
     cudaMemcpy(h_y2, d_y, m * sizeof(float), cudaMemcpyDeviceToHost);
-     
-    // Print the result
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    elapsed_time=0;
+    cudaEventElapsedTime(&elapsed_time, start, stop);
+    printf("Elapsed time GPU: %f ms\n", elapsed_time);
 
-    std::cout << "GPU Result: ";
-    for (int i = 0; i < m; i++) std::cout << h_y2[i] << " ";
-    std::cout << std::endl;
-    std::cout << "<<< (" << gridSize.x << ", " << gridSize.y << ")" ;
-    std::cout << ",(" << blockSize.x << ", " << blockSize.y << ")" << ">>> " << std::endl;
-  
+
+    // Print the result
+    if (0){
+        std::cout << "GPU Result: ";
+        for (int i = 0; i < m; i++) std::cout << h_y2[i] << " ";
+        std::cout << std::endl;
+    }
+    //std::cout << "<<< (" << gridSize.x << ", " << gridSize.y << ")" ;
+    //std::cout << ",(" << blockSize.x << ", " << blockSize.y << ")" << ">>> " << std::endl;
+      
     // difference
     float diff=0;
     for (int i = 0; i < m; i++) diff+=fabs(h_y[i]-h_y2[i]);
