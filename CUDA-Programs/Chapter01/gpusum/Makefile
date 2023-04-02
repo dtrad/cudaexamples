@@ -26,8 +26,8 @@ $(NAME).o: $(NAME).cu
     
 $(NAME): $(NAME).o   
 	$(CUDA_PATH)/bin/nvcc -ccbin g++ -m64 -gencode arch=compute_86,code=sm_86 -o $(NAME) $(NAME).o
-	cp $(NAME) .
-
+	cp $(NAME) ../../Linux/
+	
 run: build
 	$(EXEC) ./$(NAME)
 
