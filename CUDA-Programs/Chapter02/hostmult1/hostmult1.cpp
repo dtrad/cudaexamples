@@ -12,7 +12,7 @@
 // C:bin\hostmult0.exe
 // A 1024 x 1024 B 1024 x 1024 host time 2916.772 ms Gflops/sec 0.736
 
-#include "thrust/host_vector.h"
+#include <thrust/host_vector.h>
 #include "cxtimers.h"
 #include <random>
 int hostmult1(float * __restrict C,float * __restrict A,

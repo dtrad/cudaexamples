@@ -7,15 +7,16 @@
 ################################################################################
 
 # default program name. Note use command line option NAME=... as neceessary
-NAME := defaultname
+NAME := hostmult1
 
 # change these to match your installation
 CUDA_PATH := /usr/local/cuda
 # assumes CUDA samles installed in ~/samples
-NVCUDASAMPLES_ROOT := ~/samples/cuda-samples/Common
+NVCUDASAMPLES_ROOT := ~/gpu/cudasamples/samples/common/inc
 # assumes examples installed in directory ~/CudaBook 
-CX_ROOT := ~/CudaBook/CUDA-Programs/include
+CX_ROOT := ~/gpu/CUDA-Programs/include
 
+# ADDED DT: the g++ compiler may not know where vthrust is, so use nvcc instead for compiling (even when it is a pure cpp)
 
 # Target rules
 all: build
@@ -27,7 +28,7 @@ $(NAME): $(NAME).o
 	cp $(NAME) ../../Linux/
 	
 $(NAME).o: $(NAME).cpp
-	g++ -c -O2 -I $(CX_ROOT) $(NAME).cpp
+	nvcc -c -O2 -I $(CX_ROOT) $(NAME).cpp
     
 run: build
 	$(EXEC) ./$(NAME)
