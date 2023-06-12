@@ -6,11 +6,11 @@ C_APPS=crypt generate_data generate_userkey
 all: ${C_APPS} ${CU_APPS}
 
 crypt.openmp: crypt.openmp.cu
-	nvcc -Xcompiler -fopenmp -O2 -arch=sm_20 -o crypt.openmp crypt.openmp.cu -lgomp
+	nvcc -Xcompiler -fopenmp -O2 -arch=sm_52 -o crypt.openmp crypt.openmp.cu -lgomp
 sumMatrixGPU_nvToolsExt: sumMatrixGPU_nvToolsExt.cu
-	nvcc -O2 -arch=sm_20 -L${CUDA_HOME}/lib64 -lnvToolsExt -o sumMatrixGPU_nvToolsExt sumMatrixGPU_nvToolsExt.cu
+	nvcc -O2 -arch=sm_52 -L${CUDA_HOME}/lib64 -lnvToolsExt -o sumMatrixGPU_nvToolsExt sumMatrixGPU_nvToolsExt.cu
 %: %.cu
-	nvcc -O2 -arch=sm_20 -o $@ $<
+	nvcc -O2 -arch=sm_52 -o $@ $<
 %: %.c
 	gcc -O2 -std=c99 -o $@ $<
 clean:
