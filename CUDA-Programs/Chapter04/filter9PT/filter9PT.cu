@@ -5,7 +5,7 @@
 // example 4.8 filter9PT
 // 
 // RTX 2070
-// C:\bin\filter9PT.exe data\ives512.raw data\test.raw 512 512 16 16 10000 1.0 1.0 1.0   1.0 1.0 1.0   1.0 1.0 1.0
+// [linux]>>filter9PT  ../data/ives512.raw ../data/test.raw 512 512 16 16 10000 1.0 1.0 1.0   1.0 1.0 1.0   1.0 1.0 1.0
 // file data\ives512.raw read
 // filter9PT iterations 10000 time 133.604 ms
 // file data\test.raw written
