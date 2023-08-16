@@ -11,9 +11,9 @@ NAME := defaultname
 # change these to match your installation
 CUDA_PATH := /usr/local/cuda
 # assumes CUDA samles installed in ~/samples
-NVCUDASAMPLES_ROOT := ~/samples/cuda-samples/Common
+NVCUDASAMPLES_ROOT := ~/gpu/cudasamples/samples/common/inc
 # assumes examples installed in directory ~/CudaBook 
-CX_ROOT := ~/CudaBook/CUDA-Programs/include
+CX_ROOT := ~/gpu/CUDA-Programs/include
 
 
 # Target rules

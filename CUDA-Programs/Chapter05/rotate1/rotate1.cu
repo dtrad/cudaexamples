@@ -5,6 +5,7 @@
 // example 5.1 rotate1  This version uses bilinear interpolation on GPU
 // 
 // RTX 2070
+// rotate1 ../data/ives512.raw ../data/test.raw 512 512 1.0 10000
 // C:\bin\rotate1.exe data\ives512.raw data\test.raw 512 512 1.0 10000
 // file data\ives512.raw read
 // file data\test.raw written
