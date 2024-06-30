@@ -6,14 +6,17 @@
 ################################################################################
 
 # default program name. Note use command line option NAME=... as neceessary
-NAME := defaultname
+NAME := gpusum_tla
 
 # change these to match your installation
-CUDA_PATH := /usr/local/cuda
+# CUDA_PATH := /usr/local/cuda
 # assumes CUDA samles installed in ~/samples
-NVCUDASAMPLES_ROOT := ~/samples/cuda-samples/Common
+#NVCUDASAMPLES_ROOT := ~/gpu/cudasamples/samples/cuda-samples/Common
+NVCUDASAMPLES_ROOT := ~/gpu/cudasamples/samples/common/inc
+NVCUDASAMPLES_ROOT2 := ${NVHPC_HOME}/examples/OpenMP/SDK/include
+
 # assumes examples installed in directory ~/CudaBook 
-CX_ROOT := ~/CudaBook/CUDA-Programs/include
+CX_ROOT := ~/gpu/CUDA-Programs/include
 
 
 # Target rules
@@ -22,7 +25,7 @@ all: build
 build: $(NAME)
 
 $(NAME).o: $(NAME).cu
-	$(CUDA_PATH)/bin/nvcc -ccbin g++ -I $(NVCUDASAMPLES_ROOT)/ -I $(CX_ROOT)/ -m64  --threads 0 --use_fast_math -gencode arch=compute_86,code=sm_86 -o $(NAME).o -c $(NAME).cu
+	$(CUDA_PATH)/bin/nvcc -ccbin g++ -I $(NVCUDASAMPLES_ROOT)/ -I $(NVCUDASAMPLES_ROOT2) -I $(CX_ROOT)/ -m64  --threads 0 --use_fast_math -gencode arch=compute_86,code=sm_86 -o $(NAME).o -c $(NAME).cu
     
 $(NAME): $(NAME).o   
 	$(CUDA_PATH)/bin/nvcc -ccbin g++ -m64 -gencode arch=compute_86,code=sm_86 -o $(NAME) $(NAME).o
