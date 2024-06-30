@@ -1,14 +1,17 @@
-CUDA_PATH=/usr/local/cuda
+#CUDA_PATH=/usr/local/cuda
+CUDA_OTHERS=/usr/local/cuda
 HOST_COMPILER ?= g++
 NVCC=${CUDA_PATH}/bin/nvcc -ccbin ${HOST_COMPILER}
 TARGET=sgemm
 
-INCLUDES= -I${CUDA_PATH}/samples/common/inc
+#INCLUDES= -I${CUDA_OTHERS}/samples/common/inc
+#INCLUDES= -I${NVHPC_HOME}/cuda/include
+INCLUDES= -I"/home/dtrad/gpu/cudasamples/samples/common/inc/"
 NVCC_FLAGS=-m64 -lineinfo
 ALL_CCFLAGS+= -g -G
 
 # Gencode argumentes
-SMS = 30 35 37 50 52 60 61 70
+SMS = 86
 $(foreach sm, ${SMS}, $(eval GENCODE_FLAGS += -gencode arch=compute_$(sm),code=sm_$(sm)))
 
 all : ${TARGET}

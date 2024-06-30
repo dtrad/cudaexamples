@@ -9,7 +9,7 @@
 NAME := gpusum
 
 # change these to match your installation
-# CUDA_PATH := /usr/local/cuda
+# CUDA_PATH := /opt/nvidia/hpc_sdk/Linux_x86_64/24.3/compilers/
 # assumes CUDA samles installed in ~/samples
 NVCUDASAMPLES_ROOT := /home/dtrad/gpu/cudasamples/samples/common/inc
 # assumes examples installed in directory ~/CudaBook 

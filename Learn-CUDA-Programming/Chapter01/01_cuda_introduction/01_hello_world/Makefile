@@ -1,4 +1,4 @@
-CUDA_PATH=/usr/local/cuda
+#CUDA_PATH=/usr/local/cuda
 HOST_COMPILER ?= g++
 NVCC=${CUDA_PATH}/bin/nvcc -ccbin ${HOST_COMPILER}
 TARGET=hello_world
@@ -8,7 +8,7 @@ NVCC_FLAGS=-m64 -lineinfo -G
 ALL_CCFLAGS+=-g -G
 
 # Gencode argumentes
-SMS = 30 35 37 50 52 60 61 70
+SMS = 70 86
 $(foreach sm, ${SMS}, $(eval GENCODE_FLAGS += -gencode arch=compute_$(sm),code=sm_$(sm)))
 
 hello_world: hello_world.cu
