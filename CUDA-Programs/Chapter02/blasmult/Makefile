@@ -10,7 +10,7 @@
 NAME := blasmult
 
 # change these to match your installation
-CUDA_PATH := /usr/local/cuda
+# CUDA_PATH := /usr/local/cuda
 # assumes CUDA samles installed in ~/samples
 NVCUDASAMPLES_ROOT := ~/gpu/cudasamples/samples/common/inc
 # assumes examples installed in directory ~/CudaBook 
