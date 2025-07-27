@@ -1,4 +1,6 @@
 #include "kernels.cuh"
+#include <iostream>
+#include <cuda_runtime.h>
 
 __global__ void cross_correlation_cost(
     const float* d_obs,
@@ -8,6 +10,7 @@ __global__ void cross_correlation_cost(
     int ntraces
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
+    printf("Thread %d processing trace %d\n", i, i);
     if (i >= ntraces) return;
 
     float local_sum = 0.0f;
@@ -16,4 +19,5 @@ __global__ void cross_correlation_cost(
         local_sum += d_obs[idx] * d_mod[idx];
     }
     atomicAdd(cost, -local_sum);  // negative for minimization
+    
 }
