@@ -1,7 +1,5 @@
-CUDA_PATH       ?= /usr/local/cuda
 NVCC            := $(CUDA_PATH)/bin/nvcc
-NVCC_FLAGS      := -O2 -arch=sm_86 -I$(CUDA_PATH)/include -L$(CUDA_PATH)/lib64 -lcudart -lcublas -lcusolver
-
+NVCC_FLAGS      := -O2 -arch=sm_89 -I$(CUDA_PATH)/include -L$(CUDA_PATH)/lib64 
 TARGET          := fwi_xcorr
 SRC_DIR         := src
 SRC_FILES       := main.cu kernels.cu

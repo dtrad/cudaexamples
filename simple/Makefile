@@ -1,5 +1,4 @@
-CUDA=/usr/local/cuda
-NVCC=${CUDA}/bin/nvcc
+NVCC=${CUDA_PATH}/bin/nvcc
 
 CU_APPS=simple
 
@@ -7,7 +6,7 @@ CU_APPS=simple
 all: ${C_APPS} ${CU_APPS}
 
 %: %.cu
-	${NVCC} -O2 -o $@ $<
+	${NVCC} -O2 -arch=sm_86 -o $@ $<
 %: %.c
 	gcc -O2 -std=c99 -o $@ $<
 clean:

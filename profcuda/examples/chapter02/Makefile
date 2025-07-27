@@ -7,7 +7,7 @@ C_APPS=sumArraysOnHost
 all: ${C_APPS} ${CU_APPS}
 
 %: %.cu
-	nvcc -O2 -arch=sm_75 -Xcompiler -O3 -o $@ $<
+	nvcc -O2 -arch=sm_86 -Xcompiler -O3 -o $@ $<
 %: %.c
 	gcc -O2 -std=c99 -o $@ $<
 clean:
