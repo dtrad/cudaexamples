@@ -1,6 +1,6 @@
 # create makefile to create the executable testcop from testcop.cu and run the test
 name=testcop
-CUDA_PATH=/usr/local/cuda
+#CUDA_PATH=/usr/local/cuda
 CC=$(CUDA_PATH)/bin/nvcc
 SRC=$(name).cu
 
@@ -13,5 +13,8 @@ OBJ=$(SRC:.c=.o)
 all: $(name)
 $(name): $(name).cu
 	$(CC) $(CFLAGS) -o $(name) $(name).cu 
+
+debug: CFLAGS := -O0 -g -G -arch=sm_86
+debug: $(name)
 clean:
 	rm -f $(name)
